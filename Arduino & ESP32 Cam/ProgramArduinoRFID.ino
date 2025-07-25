@@ -3,33 +3,27 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-// Definisi Pin
 #define SS_PIN 10
 #define RST_PIN 9
 #define BUZZER_PIN 8
-#define BUTTON_PIN 7 // Pin untuk tombol pindah mode
+#define BUTTON_PIN 7
 
-// Definisi Mode
 #define MODE_ABSENSI 1
 #define MODE_PENDAFTARAN 2
 
-// Inisialisasi komponen
 MFRC522 mfrc522(SS_PIN, RST_PIN);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-// Variabel global
 int currentMode = MODE_ABSENSI;
 unsigned long lastButtonPress = 0;
 const long debounceDelay = 200;
-
-// Variabel untuk teks berjalan
 String textToScroll = "        SISTEM ABSENSI SMK NEGERI 1 PANGKEP        ";
 int scrollIndex = 0;
 unsigned long lastScrollMillis = 0;
 const int scrollDelay = 400;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   SPI.begin();
   mfrc522.PCD_Init();
   
@@ -38,13 +32,11 @@ void setup() {
   
   lcd.init();
   lcd.backlight();
-  updateDisplayMode(); // Tampilkan mode awal
+  updateDisplayMode();
 }
 
 void loop() {
   checkModeButton();
-
-  // Hanya jalankan teks berjalan jika dalam Mode Absensi dan tidak ada kartu
   if (currentMode == MODE_ABSENSI) {
     if (!mfrc522.PICC_IsNewCardPresent()) {
       updateScrollingText();
@@ -99,7 +91,6 @@ void prosesPendaftaran() {
 void handleResponse(String successMsg, String failMsg) {
   String response = waitForResponse();
   lcd.clear();
-  
   if (response == "SUCCESS") {
     lcd.setCursor(0, 0);
     lcd.print(successMsg);
@@ -110,7 +101,7 @@ void handleResponse(String successMsg, String failMsg) {
     bunyiGagal();
   }
   
-  delay(1500); // Mengurangi delay agar lebih responsif
+  delay(1500);
   updateDisplayMode();
   mfrc522.PICC_HaltA();
   mfrc522.PCD_StopCrypto1();
@@ -133,16 +124,15 @@ String waitForResponse() {
 void updateDisplayMode() {
   lcd.clear();
   lcd.setCursor(0, 1);
-  lcd.print("Scan Kartu RFID"); // Teks ini ada di kedua mode
+  lcd.print("Scan Kartu RFID");
   
   if (currentMode == MODE_ABSENSI) {
-    // Biarkan baris pertama kosong, akan diisi oleh teks berjalan di loop()
   } else {
     lcd.setCursor(0, 0);
     lcd.print("MODE DAFTAR RFID");
   }
   
-  scrollIndex = 0; // Reset posisi scroll setiap ganti mode
+  scrollIndex = 0;
   lastScrollMillis = 0;
 }
 
