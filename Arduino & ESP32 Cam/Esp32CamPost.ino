@@ -2,17 +2,16 @@
 #include "WiFi.h"
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
-#include <HTTPClient.h> // Menggunakan HTTPClient untuk request yang lebih sederhana
+#include <HTTPClient.h>
 
 #define FLASH_GPIO_PIN 4
 
-// KONFIGURASI JARINGAN & SERVER (SESUAI MILIK ANDA)
 const char* ssid = "Wifi";
 const char* password = "11223344";
-const char* host = "10.155.148.73";
+const char* host = "10.122.17.73";
 const int port = 80;
-const String pathAbsen = "/app-absensi-rfid-smea/upload.php";
-const String pathDaftar = "/app-absensi-rfid-smea/simpan_rfid_baru.php";
+const String pathAbsen = "/app-absensi-rfid-skansap/upload.php";
+const String pathDaftar = "/app-absensi-rfid-skansap/simpan_rfid_baru.php";
 
 #define CAMERA_MODEL_AI_THINKER
 #include "camera_pins.h"
@@ -21,11 +20,11 @@ void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); 
   pinMode(FLASH_GPIO_PIN, OUTPUT);
   digitalWrite(FLASH_GPIO_PIN, LOW);
-  Serial.begin(9600);
+
+  Serial.begin(115200);
   Serial.setDebugOutput(true);
   Serial.println();
-
-  // Konfigurasi kamera
+  
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -53,6 +52,7 @@ void setup() {
 
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
+    Serial.println("FAIL: Camera Init");
     return;
   }
 
@@ -93,11 +93,14 @@ void prosesAbsen(String uid) {
   }
   
   String serverResponse = sendDataAbsen(uid, fb->buf, fb->len);
-  if (serverResponse.indexOf("OK") != -1) {
+  
+  if (serverResponse.indexOf("HTTP/1.1 200 OK") != -1) {
     Serial.println("SUCCESS");
   } else {
     Serial.println("FAIL");
+    Serial.println("Server Response: " + serverResponse);
   }
+  
   esp_camera_fb_return(fb);
 }
 
@@ -106,7 +109,6 @@ void prosesDaftar(String uid) {
   String serverPath = "http://" + String(host) + pathDaftar;
   http.begin(serverPath);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-
   String httpRequestData = "uid=" + uid;
   int httpResponseCode = http.POST(httpRequestData);
 
@@ -121,7 +123,7 @@ void prosesDaftar(String uid) {
 String sendDataAbsen(String uid, const uint8_t * imageData, size_t imageSize) {
   WiFiClient client;
   String response = "";
-
+  
   if (!client.connect(host, port)) {
     return "FAIL: Connection";
   }
@@ -130,6 +132,7 @@ String sendDataAbsen(String uid, const uint8_t * imageData, size_t imageSize) {
   String head = "--" + boundary + "\r\n" + "Content-Disposition: form-data; name=\"uid\"\r\n\r\n" + uid + "\r\n";
   String tail = "\r\n--" + boundary + "--\r\n";
   String file_header = "--" + boundary + "\r\n" + "Content-Disposition: form-data; name=\"imageFile\"; filename=\"picture.jpg\"\r\n" + "Content-Type: image/jpeg\r\n\r\n";
+  
   uint32_t contentLength = head.length() + file_header.length() + imageSize + tail.length();
 
   client.println("POST " + pathAbsen + " HTTP/1.1");
@@ -141,7 +144,7 @@ String sendDataAbsen(String uid, const uint8_t * imageData, size_t imageSize) {
   client.print(file_header);
   client.write(imageData, imageSize);
   client.print(tail);
-
+  
   long timeout = millis();
   while (client.available() == 0) {
     if (millis() - timeout > 10000) {
@@ -149,9 +152,11 @@ String sendDataAbsen(String uid, const uint8_t * imageData, size_t imageSize) {
       return "FAIL: Timeout";
     }
   }
+  
   while(client.available()){
-    response += client.readStringUntil('\r');
+    response += client.readString();
   }
+  
   client.stop();
   return response;
 }
