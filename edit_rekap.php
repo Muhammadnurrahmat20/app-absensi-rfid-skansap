@@ -64,12 +64,12 @@ while ($row = $result->fetch_assoc()) {
                     <form class="mb-5" action="./edit_rekap_post.php" method="POST" id="appsform"
                         enctype="multipart/form-data">
                         <div class="form-group row">
-                            <label class="col-sm-4 col-form-label" for="jabatanNama">Jabatan Nama</label>
+                            <label class="col-sm-4 col-form-label" for="pegawaiNama">Nama Pegawai</label>
                             <div class="col-sm-8">
                                 <input type="hidden" class="form-control" id="rekapID" name="rekapID"
                                     value="<?php echo $rekap_id; ?>" autocomplete="off" required>
-                                <input type="text" class="form-control" id="jabatanNama" name="jabatanNama"
-                                    placeholder="Masukkan Nama Jabatan" value="<?php echo $pegawai_nama; ?>"
+                                <input type="text" class="form-control" id="pegawaiNama" name="pegawaiNama"
+                                    placeholder="Masukkan Nama Pegawai" value="<?php echo $pegawai_nama; ?>"
                                     autocomplete="off" minlength="2" maxlength="50" disabled>
                             </div>
                         </div>
@@ -112,9 +112,6 @@ while ($row = $result->fetch_assoc()) {
                                     <option value="Hadir Terlambat"
                                         <?php echo ($rekap_keterangan == 'Hadir Terlambat') ? "selected" : "" ?>>
                                         Hadir Terlambat</option>
-                                    <option value="Hadir Terlambat"
-                                        <?php echo ($rekap_keterangan == 'Terlambat') ? "selected" : "" ?>>
-                                        Terlambat</option>
                                 </select>
                             </div>
                         </div>
