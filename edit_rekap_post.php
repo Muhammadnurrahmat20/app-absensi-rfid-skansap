@@ -43,7 +43,7 @@ if (isset($_POST)) {
         /// Sukses
         die(json_encode(array(
             'status' => true, 
-            'message' => 'Data Jabatan berhasil di Update.'
+            'message' => 'Data berhasil di Update.'
         )));
     }else{
         /// Terjadi Kesalahan MySQL
